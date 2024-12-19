@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 'use strict';
+import Front_Washer from "../src/washer";
+// const {washer} = require('googleapis');
 
 // Initializes the SmartHome.
 function SmartHome() {
@@ -23,9 +25,9 @@ function SmartHome() {
     this.userWelcome = document.getElementById('user-welcome');
 
     // Bind events.
-    this.updateButton = document.getElementById('demo-washer-update');
-    this.updateButton.addEventListener('click', this.updateState.bind(this));
-    this.washer = document.getElementById('demo-washer');
+    // this.updateButton = document.getElementById('demo-washer-update');
+    // this.updateButton.addEventListener('click', this.updateState.bind(this));
+    // this.washer = document.getElementById('demo-washer');
 
     this.ac_updateButton = document.getElementById('demo-ac-update');
     this.ac_updateButton.addEventListener('click', this.ac_updateState.bind(this));
