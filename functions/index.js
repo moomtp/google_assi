@@ -189,32 +189,10 @@ class ChallengeNeededError extends SmartHomeError{
 }
 
 const updateDevice = async (execution, deviceId) => {
-  // TODO: Add commands to change device states
+  // Add commands to change device states
   const {params, command} = execution;
   // const {challenge, params, command} = execution; // Add secnod check
-  let state; let ref;
-  switch (command) {
-     case 'action.devices.commands.OnOff':
-     state = {on: params.on};
-     ref = firebaseRef.child(deviceId).child('OnOff');
-     break;
-  
-    case 'action.devices.commands.StartStop':
-      state = {isRunning: params.start};
-      ref = firebaseRef.child(deviceId).child('StartStop');
-      break;
-    case 'action.devices.commands.PauseUnpause':
-      state = {isPaused: params.pause};
-      ref = firebaseRef.child(deviceId).child('StartStop');
-      break;
-
-    // TODO : add setmodes command
-    case 'action.devices.commands.SetModes':
-      state = {load : params.updateModeSettings.load};
-      ref = firebaseRef.child(deviceId).child('Modes');
-      break;
-  }
-
+  const commandResult = await washer.executeCommand(command, params);
   // functions.logger.error("This is an command log", command);
 
   return ref.update(state)
@@ -309,6 +287,7 @@ exports.reportstate = functions.database.ref('{deviceId}').onWrite(
 
       // TODO: Get latest state and call HomeGraph API
       const snapshot = change.after.val();
+      const deviceStates = washer.getReportStatePayload(snapshot);
 
       const requestBody = {
         requestId: 'ff36a3cc', /* Any unique ID */
@@ -317,15 +296,7 @@ exports.reportstate = functions.database.ref('{deviceId}').onWrite(
           devices: {
             states: {
               /* Report the current state of our washer */
-              [context.params.deviceId]: {
-                on: snapshot.OnOff.on,
-                isPaused: snapshot.StartStop.isPaused,
-                isRunning: snapshot.StartStop.isRunning,
-                // Add currentModeSettings
-                currentModeSettings: {
-                  load: snapshot.Modes.load,
-                },
-              },
+              [context.params.deviceId]: deviceStates,
             },
           },
         },
