@@ -21,6 +21,9 @@ const {smarthome} = require('actions-on-google');
 const {google} = require('googleapis');
 const util = require('util');
 const admin = require('firebase-admin');
+
+const Washer = require('./washer')
+
 // Initialize Firebase
 admin.initializeApp();
 const firebaseRef = admin.database().ref('/');
@@ -34,6 +37,8 @@ const homegraph = google.homegraph({
 });
 // Hardcoded user ID
 const USER_ID = '123';
+
+const washer = new Washer
 
 exports.login = functions.https.onRequest((request, response) => {
   if (request.method === 'GET') {
