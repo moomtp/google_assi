@@ -114,62 +114,7 @@ app.onSync((body) => {
     requestId: 'ff36a3cc-ec34-11e6-b1a0-64510650abcf',
     payload: {
       agentUserId: USER_ID,
-      devices: [{
-        id: 'washer',
-        type: 'action.devices.types.WASHER',
-        traits: [
-          'action.devices.traits.OnOff',
-          'action.devices.traits.StartStop',
-          'action.devices.traits.RunCycle',
-          // Add Modes trait
-          'action.devices.traits.Modes',
-        ],
-        name: {
-          defaultNames: ['My Washer'],
-          name: 'Washer',
-          nicknames: ['Washer'],
-        },
-        deviceInfo: {
-          manufacturer: 'Acme Co',
-          model: 'acme-washer',
-          hwVersion: '1.0',
-          swVersion: '1.0.1',
-        },
-
-        willReportState: true,
-
-        attributes: {
-          pausable: true,
-          //Add availableModes
-          availableModes: [{
-            name: 'load',
-            name_values: [{
-              name_synonym: ['load'],
-              lang: 'en',
-            }],
-            settings: [{
-              setting_name: 'small',
-              setting_values: [{
-                setting_synonym: ['small'],
-                lang: 'en',
-              }]
-            }, {
-              setting_name: 'medium',
-              setting_values: [{
-                setting_synonym: ['medium'],
-                lang: 'en',
-              }]
-            }, {
-              setting_name: 'large',
-              setting_values: [{
-                setting_synonym: ['large'],
-                lang: 'en',
-              }]
-            }],
-            ordered: true,
-          }],
-        },
-      }],
+      devices: [washer.getDeviceSync()],
     },
   };
 });
@@ -177,37 +122,29 @@ app.onSync((body) => {
 // query firebase data by deviceId
 const queryFirebase = async (deviceId) => {
   const snapshot = await firebaseRef.child(deviceId).once('value');
-  const snapshotVal = snapshot.val();
-  // Define device states to return
-  return {
-    on: snapshotVal.OnOff.on,
-    isPaused: snapshotVal.StartStop.isPaused,
-    isRunning: snapshotVal.StartStop.isRunning,
-    load: snapshotVal.Modes.load,
-    // Add Modes snapshot
-    // Turbo: snapshotVal.Toggles.Turbo,
-  };
+  return snapshot.val();
 };
 
 // eslint-disable-next-line
 const queryDevice = async (deviceId) => {
   const data = await queryFirebase(deviceId);
+  return await washer.getDeviceStates(data);
   // TODO : Define device states to return
-  return {
-    on : data.on,
-    isPaused: data.isPaused,
-    isRunning: data.isRunning,
-    currentRunCycle: [{
-      currentCycle: 'rinse',
-      nextCycle: 'spin',
-      lang: 'en',
-    }],
-    currentTotalRemainingTime: 1212,
-    currentCycleRemainingTime: 301,
-    // Add currentModeSettings
-    currentModeSettings: {
-      load: data.load},
-  };
+  // return {
+  //   on : data.on,
+  //   isPaused: data.isPaused,
+  //   isRunning: data.isRunning,
+  //   currentRunCycle: [{
+  //     currentCycle: 'rinse',
+  //     nextCycle: 'spin',
+  //     lang: 'en',
+  //   }],
+  //   currentTotalRemainingTime: 1212,
+  //   currentCycleRemainingTime: 301,
+  //   // Add currentModeSettings
+  //   currentModeSettings: {
+  //     load: data.load},
+  // };
 };
 
 app.onQuery(async(body) => {
