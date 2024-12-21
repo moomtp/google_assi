@@ -1,3 +1,12 @@
+// const queryResult = await homegraph.devices.query({
+//   requestBody: {
+//     agentUserId: USER_ID,
+//     inputs: [{intent: 'action.devices.QUERY', payload: {devices: [{id: context.params.deviceId}]}}]
+//   }
+// });
+// console.log(queryResult);
+
+
 const { google } = require('googleapis');
 
 async function initializeHomegraph() {

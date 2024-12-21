@@ -23,6 +23,7 @@ const util = require('util');
 const admin = require('firebase-admin');
 
 const Washer = require('./washer')
+const AC = require('./ac')
 
 // Initialize Firebase
 admin.initializeApp();
@@ -38,7 +39,13 @@ const homegraph = google.homegraph({
 // Hardcoded user ID
 const USER_ID = '123';
 
-const washer = new Washer
+const washer = new Washer();
+const ac = new AC();
+
+const devices = {
+  'washer': washer,
+  'ac': ac  
+};
 
 exports.login = functions.https.onRequest((request, response) => {
   if (request.method === 'GET') {
@@ -114,7 +121,10 @@ app.onSync((body) => {
     requestId: 'ff36a3cc-ec34-11e6-b1a0-64510650abcf',
     payload: {
       agentUserId: USER_ID,
-      devices: [washer.getDeviceSync()],
+      devices: [
+        washer.getDeviceSync(),
+        ac.getDeviceSync()
+      ],
     },
   };
 });
@@ -127,24 +137,12 @@ const queryFirebase = async (deviceId) => {
 
 // eslint-disable-next-line
 const queryDevice = async (deviceId) => {
+  const device = devices[deviceId];
+  if(!device){ throw new Error(`Device ${devcie} not found`);}
+
   const data = await queryFirebase(deviceId);
-  return await washer.getDeviceStates(data);
-  // TODO : Define device states to return
-  // return {
-  //   on : data.on,
-  //   isPaused: data.isPaused,
-  //   isRunning: data.isRunning,
-  //   currentRunCycle: [{
-  //     currentCycle: 'rinse',
-  //     nextCycle: 'spin',
-  //     lang: 'en',
-  //   }],
-  //   currentTotalRemainingTime: 1212,
-  //   currentCycleRemainingTime: 301,
-  //   // Add currentModeSettings
-  //   currentModeSettings: {
-  //     load: data.load},
-  // };
+
+  return await device.getDeviceStates(data);
 };
 
 app.onQuery(async(body) => {
@@ -153,16 +151,22 @@ app.onQuery(async(body) => {
   const payload = {
     devices: {},
   };
+
   const queryPromises = [];
   const intent = body.inputs[0];
+
   for (const device of intent.payload.devices) {
     const deviceId = device.id;
     queryPromises.push(
-        queryDevice(deviceId)
-            .then((data) => {
-              // Add response to device payload
-              payload.devices[deviceId] = data;
-            }) );
+      queryDevice(deviceId)
+        .then((data) => {
+          payload.devices[deviceId] = data;
+        })
+        .catch((error) => {
+          functions.logger.error(`Error querying device ${deviceId}:`, error);
+          payload.devices[deviceId] = { errorCode: 'deviceOffline' };
+        })
+    );
   }
   // Wait for all promises to resolve
   await Promise.all(queryPromises);
@@ -190,13 +194,17 @@ class ChallengeNeededError extends SmartHomeError{
 
 const updateDevice = async (execution, deviceId) => {
   // Add commands to change device states
+  const device = devices[deviceId];
+  if(!device) throw new Error(`Devcie ${deviceId} not found`);
+
   const {params, command} = execution;
   // const {challenge, params, command} = execution; // Add secnod check
-  const commandResult = await washer.executeCommand(command, params);
+  const commandResult = await device.executeCommand(command, params);
+  const ref = firebaseRef.child(deviceId).child(commandResult.path);
   // functions.logger.error("This is an command log", command);
 
-  return ref.update(state)
-      .then(() => state);
+  return ref.update(commandResult.state)
+      .then(() => commandResult.state);
 };
 
 app.onExecute(async (body) => {
@@ -285,9 +293,15 @@ exports.reportstate = functions.database.ref('{deviceId}').onWrite(
     async (change, context) => {
       functions.logger.info('Firebase write event triggered Report State');
 
-      // TODO: Get latest state and call HomeGraph API
+      const deviceId = context.params.deviceId;
+      const device = devices[deviceId];
+      if(!device){
+        functions.logger.error(`Devcie ${deviceId} not found`);
+        return;
+      } 
+      // Get latest state and call HomeGraph API
       const snapshot = change.after.val();
-      const deviceStates = washer.getReportStatePayload(snapshot);
+      const deviceStates = device.getReportStatePayload(snapshot);
 
       const requestBody = {
         requestId: 'ff36a3cc', /* Any unique ID */
@@ -296,14 +310,18 @@ exports.reportstate = functions.database.ref('{deviceId}').onWrite(
           devices: {
             states: {
               /* Report the current state of our washer */
-              [context.params.deviceId]: deviceStates,
+              [deviceId]: deviceStates,
             },
           },
         },
       };
 
-      const res = await homegraph.devices.reportStateAndNotification({
-        requestBody,
-      });
-      functions.logger.info('Report state response:', res.status, res.data);
+      functions.logger.info('Report deviceStates:', {deviceStates});
+      functions.logger.info('Report requestBody:', {requestBody});
+
+      // TODO : here should be a report message function
+      // const res = await homegraph.devices.reportStateAndNotification({
+      //   requestBody,
+      // });
+      // functions.logger.info('Report state response:', res.status, res.data);
     });
