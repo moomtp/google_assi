@@ -203,8 +203,8 @@ const updateDevice = async (execution, deviceId) => {
   const ref = firebaseRef.child(deviceId).child(commandResult.path);
 
   // functions.logger.error("This is a command ", {command});
-  functions.logger.error("This is a params ", {params});
-  functions.logger.error("This is a command result", {commandResult});
+  // functions.logger.error("This is a params ", {params});
+  // functions.logger.error("This is a command result", {commandResult});
   // functions.logger.error("This is a ref", ref);
 
   return ref.update(commandResult.state)
@@ -314,18 +314,19 @@ exports.reportstate = functions.database.ref('{deviceId}').onWrite(
           devices: {
             states: {
               /* Report the current state of our washer */
-              [deviceId]: deviceStates,
+              [deviceId] : deviceStates,
             },
           },
         },
       };
 
+      functions.logger.info('Report deviceId:', {deviceId});
       functions.logger.info('Report deviceStates:', {deviceStates});
       functions.logger.info('Report requestBody:', {requestBody});
 
       // TODO : here should be a report message function
-      const res = await homegraph.devices.reportStateAndNotification({
+      const res = await homegraph.devices.reportStateAndNotification(
         requestBody,
-      });
+      );
       functions.logger.info('Report state response:', res.status, res.data);
     });
