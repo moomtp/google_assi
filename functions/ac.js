@@ -14,7 +14,7 @@ class AC {
   getDeviceSync() {
     return {
       id: this.deviceId,
-      type: 'action.devices.types.AC_UNIT',
+      type: 'action.devices.types.THERMOSTAT',
       traits: [
         'action.devices.traits.FanSpeed',
         'action.devices.traits.OnOff',
@@ -25,6 +25,8 @@ class AC {
         name: 'AC',
         nicknames: ['AC'],
       },
+      willReportState: true,
+
       deviceInfo: this.deviceInfo,
       willReportState: true,
       attributes: {
@@ -63,7 +65,10 @@ class AC {
           "fan-only",
           "on"
         ],
-        thermostatTemperatureUnit: "C"
+        thermostatTemperatureUnit: "C",
+        // commandOnlyTemperatureSetting: true,
+        // queryOnlyTemperatureSetting: false
+
       },
     };
   }
@@ -71,10 +76,11 @@ class AC {
   async getDeviceStates(snapshotVal) {
     return {
       on: snapshotVal.OnOff.on,
-      currentFanSpeedSetting: snapshotVal.SetFanSpeed.currentFanSpeed,
-      thermostatMode: snapshotVal.thermostatMode,
-      thermostatTemperatureAmbient: 25,
-      thermostatTemperatureSetpoint: snapshotVal.TemperatureControl.temperatureSetpointCelsius,
+      online: true,
+      currentFanSpeedSetting: snapshotVal.SetFanSpeed.fanSpeed,
+      thermostatMode: snapshotVal.TemperatureControl.thermostatMode,
+      thermostatTemperatureAmbient: snapshotVal.TemperatureControl.thermostatTemperatureSetpoint,
+      thermostatTemperatureSetpoint: snapshotVal.TemperatureControl.thermostatTemperatureSetpoint,
 
       // temperatureSetpointCelsius: snapshotVal.TemperatureControl.temperatureSetpointCelsius,
       // temperatureAmbientCelsius: snapshotVal.TemperatureControl.temperatureAmbientCelsius
@@ -88,22 +94,25 @@ class AC {
         state = { path: 'OnOff', state: { on: params.on } };
         break;
       case 'action.devices.commands.SetFanSpeed':
-        state = { path: 'SetFanSpeed', state: { fanSpeed: params.currentFanSpeed } };
+        state = { path: 'SetFanSpeed', state: { fanSpeed: params.fanSpeed } };
         break;
 
       case 'action.devices.commands.ThermostatTemperatureSetpoint':
         state = {
           path: 'TemperatureControl',
           state: { 
-            thermostatTemperatureSetpoint : params.temperatureSetpointCelsius
+            // thermostatMode: params.currentMode,
+            // thermostatTemperatureAmbient:  params.thermostatTemperatureAmbient,
+            thermostatTemperatureSetpoint : params.thermostatTemperatureSetpoint
           }
         };
         break;
 
       case 'action.devices.commands.ThermostatSetMode':
-        state = { path: 'ThermostatMode', state: { thermostatMode: params.currentMode } };
+        state = { path: 'TemperatureControl', state: { thermostatMode: params.thermostatMode } };
         break;
       default:
+        functions.logger.Error("exction command on exec : ", {command})
         throw new Error(`Command ${command} not supported`);
     }
     return state;
@@ -112,9 +121,10 @@ class AC {
   getReportStatePayload(snapshot) {
     return {
       on: snapshot.OnOff.on,
-      fanSpeed: snapshot.SetFanSpeed.currentFanSpeed,
-      thermostatMode: snapshot.thermostatMode.currentMode,
-      thermostatTemperatureSetpoint: snapshot.TemperatureControl.temperatureSetpointCelsius,      
+      fanSpeed: snapshot.SetFanSpeed.fanSpeed,
+      thermostatMode: snapshot.TemperatureControl.thermostatMode,
+      thermostatTemperatureAmbient: snapshot.TemperatureControl.thermostatTemperatureSetpoint,      
+      thermostatTemperatureSetpoint: snapshot.TemperatureControl.thermostatTemperatureSetpoint,      
     };
   }
 }

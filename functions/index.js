@@ -201,7 +201,11 @@ const updateDevice = async (execution, deviceId) => {
   // const {challenge, params, command} = execution; // Add secnod check
   const commandResult = await device.executeCommand(command, params);
   const ref = firebaseRef.child(deviceId).child(commandResult.path);
-  // functions.logger.error("This is an command log", command);
+
+  // functions.logger.error("This is a command ", {command});
+  functions.logger.error("This is a params ", {params});
+  functions.logger.error("This is a command result", {commandResult});
+  // functions.logger.error("This is a ref", ref);
 
   return ref.update(commandResult.state)
       .then(() => commandResult.state);
@@ -320,8 +324,8 @@ exports.reportstate = functions.database.ref('{deviceId}').onWrite(
       functions.logger.info('Report requestBody:', {requestBody});
 
       // TODO : here should be a report message function
-      // const res = await homegraph.devices.reportStateAndNotification({
-      //   requestBody,
-      // });
-      // functions.logger.info('Report state response:', res.status, res.data);
+      const res = await homegraph.devices.reportStateAndNotification({
+        requestBody,
+      });
+      functions.logger.info('Report state response:', res.status, res.data);
     });
