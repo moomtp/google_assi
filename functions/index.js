@@ -24,6 +24,7 @@ const admin = require('firebase-admin');
 
 const Washer = require('./washer')
 const AC = require('./ac')
+const Fan = require('./fan')
 
 // Initialize Firebase
 admin.initializeApp();
@@ -41,10 +42,12 @@ const USER_ID = '123';
 
 const washer = new Washer();
 const ac = new AC();
+const fan = new Fan();
 
 const devices = {
   'washer': washer,
-  'ac': ac  
+  'ac': ac,
+  'fan': fan  
 };
 
 exports.login = functions.https.onRequest((request, response) => {
@@ -123,7 +126,8 @@ app.onSync((body) => {
       agentUserId: USER_ID,
       devices: [
         washer.getDeviceSync(),
-        ac.getDeviceSync()
+        ac.getDeviceSync(),
+        fan.getDeviceSync()
       ],
     },
   };
