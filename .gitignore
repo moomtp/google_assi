@@ -7,6 +7,9 @@ yarn-error.log*
 firebase-debug.log*
 firebase-debug.*.log*
 
+package-lock.json
+requirements.txt
+
 # Firebase cache
 .firebase/
 .firebaserc
