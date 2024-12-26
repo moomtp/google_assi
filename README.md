@@ -11,7 +11,7 @@ Additionally, the frontend source code located in the public directory has been 
 
 
 
-### tec stack  
+### Tech stack  
 Cloud Service : firebase functions, firebase hosts, firebase realtimeDatabase
 
 Google Home Relative : OAuth 2.0, Google Developer Console
