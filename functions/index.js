@@ -50,53 +50,63 @@ const devices = {
   'fan': fan  
 };
 
+// 處理登入請求的函數
 exports.login = functions.https.onRequest((request, response) => {
+  // 處理 GET 請求 - 顯示登入頁面
   if (request.method === 'GET') {
     functions.logger.log('Requesting login page');
+    // 回傳一個簡單的 HTML 登入表單
     response.send(`
-    <html>
+      <html>
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <body>
-        <form action="/login" method="post">
-          <input type="hidden"
-            name="responseurl" value="${request.query.responseurl}" />
-          <button type="submit" style="font-size:14pt">
-            Link this service to Google
-          </button>
-        </form>
+      <form action="/login" method="post">
+        <!-- 隱藏欄位,存放回調 URL -->
+        <input type="hidden" 
+          name="responseurl" value="${request.query.responseurl}" />
+        <button type="submit" style="font-size:14pt">
+          Link this service to Google
+        </button>
+      </form>
       </body>
-    </html>
-  `);
+      </html>
+    `);
   } else if (request.method === 'POST') {
-    // Here, you should validate the user account.
-    // In this sample, we do not do that.
+    // 處理 POST 請求 - 處理登入表單提交
+    // 這裡應該要驗證使用者帳號,但此範例沒有實作
     const responseurl = decodeURIComponent(request.body.responseurl);
     functions.logger.log(`Redirect to ${responseurl}`);
     return response.redirect(responseurl);
   } else {
-    // Unsupported method
+    // 不支援的 HTTP 方法
     response.send(405, 'Method Not Allowed');
   }
 });
 
+// 模擬 OAuth 授權端點
 exports.fakeauth = functions.https.onRequest((request, response) => {
+  // 建立回調 URL,加入授權碼(code)和狀態(state)參數
   const responseurl = util.format('%s?code=%s&state=%s',
-      decodeURIComponent(request.query.redirect_uri), 'xxxxxx',
-      request.query.state);
+    decodeURIComponent(request.query.redirect_uri), 'xxxxxx',
+    request.query.state);
   functions.logger.log(`Set redirect as ${responseurl}`);
+  // 重導向到登入頁面
   return response.redirect(
-      `/login?responseurl=${encodeURIComponent(responseurl)}`);
+    `/login?responseurl=${encodeURIComponent(responseurl)}`);
 });
 
+// 模擬 OAuth Token 端點
 exports.faketoken = functions.https.onRequest((request, response) => {
+  // 取得授權類型(grant_type)
   const grantType = request.query.grant_type ?
     request.query.grant_type : request.body.grant_type;
-  const secondsInDay = 86400; // 60 * 60 * 24
+  const secondsInDay = 86400; // 一天的秒數
   const HTTP_STATUS_OK = 200;
   functions.logger.log(`Grant type ${grantType}`);
 
   let obj;
   if (grantType === 'authorization_code') {
+    // 如果是授權碼模式,回傳存取權杖和更新權杖
     obj = {
       token_type: 'bearer',
       access_token: '123access',
@@ -104,15 +114,18 @@ exports.faketoken = functions.https.onRequest((request, response) => {
       expires_in: secondsInDay,
     };
   } else if (grantType === 'refresh_token') {
+    // 如果是更新權杖模式,只回傳新的存取權杖
     obj = {
       token_type: 'bearer',
-      access_token: '123access',
+      access_token: '123access', 
       expires_in: secondsInDay,
     };
   }
+  // 回傳 Token 資訊
   response.status(HTTP_STATUS_OK)
-      .json(obj);
+    .json(obj);
 });
+
 
 const app = smarthome();
 
