@@ -102,7 +102,20 @@ exports.faketoken = functions.https.onRequest((request, response) => {
     request.query.grant_type : request.body.grant_type;
   const secondsInDay = 86400; // 一天的秒數
   const HTTP_STATUS_OK = 200;
+  const { client_id, client_secret, grant_type } = request.body;
   functions.logger.log(`Grant type ${grantType}`);
+
+  // request will be liked : 
+  /*
+  Request Body:
+  {
+    "grant_type": "authorization_code",
+    "code": "xxxxxx",
+    "redirect_uri": "https://oauth-redirect.googleusercontent.com/r/learningassi",
+    "client_id": "client_id_A",
+    "client_secret": "client_secret_A"
+  }
+  */
 
   let obj;
   if (grantType === 'authorization_code') {
